@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+
+  "puck": {
+    "diameterMm": 75,
+    "diameterTolerancePercent": 20,
+    "minimumCircularity": 0.65,
+    "minimumConfidence": 0.80
+  },
+
+  "stability": {
+    "enabled": true,
+    "positionThresholdMm": 2.0,
+    "requiredStableFrames": 8,
+    "maximumTrackingLossFrames": 5
+  },
+
+  "colors": {
+    "red": {
+      "hMin": 0,
+      "hMax": 15,
+      "sMin": 100,
+      "sMax": 255,
+      "vMin": 70,
+      "vMax": 255
+    },
+
+    "blue": {
+      "hMin": 90,
+      "hMax": 135,
+      "sMin": 80,
+      "sMax": 255,
+      "vMin": 50,
+      "vMax": 255
+    }
+  },
+
+  "lines": {
+    "zoneLineColor": {
+      "hMin": 0,
+      "hMax": 180,
+      "sMin": 0,
+      "sMax": 70,
+      "vMin": 150,
+      "vMax": 255
+    },
+
+    "faultLineColor": {
+      "hMin": 0,
+      "hMax": 180,
+      "sMin": 0,
+      "sMax": 80,
+      "vMin": 20,
+      "vMax": 120
+    }
+  },
+
+  "processing": {
+    "roiEnabled": true,
+    "morphology": {
+      "enabled": true,
+      "kernelSize": 5
+    }
+  },
+
+  "confidence": {
+    "colorWeight": 0.20,
+    "shapeWeight": 0.20,
+    "sizeWeight": 0.15,
+    "positionWeight": 0.20,
+    "stabilityWeight": 0.25
+  }
+}

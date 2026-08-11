@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+
+  "supported": [
+    "FR",
+    "US",
+    "ES",
+    "DE"
+  ],
+
+  "default": "FR"
+}

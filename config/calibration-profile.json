@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+
+  "profile": {
+    "id": "CAL-DEFAULT-001",
+    "createdAt": null,
+    "updatedAt": null
+  },
+
+  "camera": {
+    "matrix": null,
+    "distortion": null
+  },
+
+  "table": {
+    "corners": {
+      "topLeft": null,
+      "topRight": null,
+      "bottomLeft": null,
+      "bottomRight": null
+    },
+
+    "homography": null
+  },
+
+  "zones": {
+    "zone1": null,
+    "zone2": null,
+    "zone3": null,
+    "zone4": null,
+    "hanger": null,
+    "faultLine": null
+  },
+
+  "lineDetection": {
+    "zoneLineColor": null,
+    "faultLineColor": null
+  },
+
+  "validation": {
+    "calibrated": false,
+    "validatedByOperator": false
+  }
+}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        AMZ-IT Electric Shuffleboard
+    </title>
+
+    <link rel="stylesheet" href="./css/main.css">
+
+</head>
+
+<body>
+
+
+
+    <main id="app">
+
+        <section id="camera-screen">
+
+            <video id="camera-preview" autoplay muted playsinline></video>
+
+            <div id="camera-overlay">
+
+                <div class="brand">
+                    AMZ-IT
+                </div>
+
+                <div class="camera-status">
+                    CAMERA INITIALIZING...
+                </div>
+
+            </div>
+
+        </section>
+
+                <!-- ================================================= -->
+        <!-- OPENCV DEBUG -->
+        <!-- ================================================= -->
+
+        <canvas
+            id="opencv-debug-canvas"
+        ></canvas>
+
+    </main>
+
+    <div id="calibration-panel" class="calibration-panel">
+
+        <div id="calibration-title" class="calibration-title">
+            CALIBRATION DE LA PLANCHE
+        </div>
+
+
+        <div id="calibration-instruction" class="calibration-instruction">
+            Cliquez successivement sur les 4 coins de la planche
+        </div>
+
+
+        <button id="calibration-start" type="button">
+            DÉMARRER
+        </button>
+
+
+        <button id="calibration-reset" type="button">
+            RÉINITIALISER
+        </button>
+
+
+        <div id="calibration-status" class="calibration-status">
+            0 / 4
+        </div>
+
+    </div>
+
+    <script src="./lib/opencv/opencv.js"></script>
+    <script src="../src/vision/camera/CameraManager.js"></script>
+    <script src="../src/vision/calibration/CalibrationManager.js"></script>
+    <script src="../src/vision/calibration/CoordinateTransformer.js"></script>
+    <script src="../src/vision/calibration/HomographyManager.js"></script>
+    <script src="../src/vision/VisionEngine.js"></script>
+    <script src="../src/vision/BoardGeometry.js"></script>
+    <script src="../src/vision/LineCalibration.js"></script>
+    <script src="./js/renderer.js"></script>
+
+</body>
+
+</html>

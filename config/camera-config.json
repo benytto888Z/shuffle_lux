@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+
+  "camera": {
+    "id": "VISION_CAM_01",
+    "type": "INDUSTRIAL_COLOR_GLOBAL_SHUTTER",
+    "sensor": "SONY_IMX265",
+    "resolution": {
+      "width": 2048,
+      "height": 1536
+    },
+    "fps": 60
+  },
+
+  "optical": {
+    "lensMount": "CS",
+    "focalLengthMm": 12,
+    "heightMm": 1250,
+    "orientation": "PORTRAIT"
+  },
+
+  "exposure": {
+    "mode": "MANUAL",
+    "exposureUs": 3000,
+    "gainDb": 0
+  },
+
+  "whiteBalance": {
+    "mode": "MANUAL",
+    "red": 1.0,
+    "green": 1.0,
+    "blue": 1.0
+  }
+}

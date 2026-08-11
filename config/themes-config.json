@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+
+  "themes": {
+    "ARC_AFRICA": {
+      "name": "ARC AFRICA",
+      "description": "Élégance Courbée"
+    },
+
+    "GLOW_AFRICA": {
+      "name": "GLOW AFRICA",
+      "description": "Lumière Intelligente"
+    },
+
+    "CYBER_AFRICA": {
+      "name": "CYBER AFRICA",
+      "description": "Puissance Futuriste"
+    }
+  },
+
+  "defaultTheme": "ARC_AFRICA"
+}

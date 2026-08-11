@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+
+  "table": {
+    "lengthMm": 3600,
+    "widthMm": 600
+  },
+
+  "pucks": {
+    "diameterMm": 75,
+    "thicknessMm": 20,
+    "soloCount": 4,
+    "teamCountPerSide": 4
+  },
+
+  "turn": {
+    "durationSeconds": 10,
+    "nextPlayerCountdownSeconds": 4
+  },
+
+  "scoring": {
+    "zone1": 1,
+    "zone2": 2,
+    "zone3": 3,
+    "zone4": 4,
+    "hanger": 5
+  },
+
+  "competition": {
+    "winningScore": 15,
+    "allowedPlayers": [1, 2, 4],
+    "teamsAllowed": true
+  },
+
+  "soloChallenge": {
+    "turns": 5,
+    "hallOfFameSize": 10
+  },
+
+  "rushMode": {
+    "durationSeconds": 180
+  },
+
+  "kingOfTheHill": {
+    "maximumConsecutiveWins": 0
+  },
+
+  "hangerMaster": {
+    "turns": 5,
+    "pucksPerTurn": 4
+  }
+}

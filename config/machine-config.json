@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "machine": {
+    "id": "AMZ-SHUFFLE-001",
+    "model": "ELECTRIC_SHUFFLEBOARD_PREMIUM",
+    "manufacturer": "AMZ-IT",
+    "softwareVersion": "0.1.0"
+  },
+  "hardware": {
+    "controller": "ESP32",
+    "display": {
+      "sizeInches": 55,
+      "resolution": "3840x2160"
+    },
+    "camera": {
+      "count": 1,
+      "interface": "USB3"
+    }
+  },
+  "network": {
+    "mode": "LAN",
+    "configurationPort": 8787,
+    "gamePort": 8788
+  },
+  "localization": {
+    "defaultLanguage": "FR"
+  },
+  "theme": {
+    "default": "ARC_AFRICA"
+  }
+}

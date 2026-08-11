@@ -1,0 +1,46 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Electron build
+dist/
+release/
+out/
+
+# Flutter
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool/
+.packages
+build/
+.pub-cache/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Camera / generated files
+captures/
+recordings/
+temp/
+
+# Player photos
+player-data/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
