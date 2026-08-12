@@ -6,6 +6,12 @@ class BoardGeometry {
          * =====================================================
          * DIMENSIONS PHYSIQUES
          * =====================================================
+         *
+         * Ces valeurs peuvent changer d'une machine à l'autre.
+         *
+         * Prototype :
+         * longueur = 1.20 m
+         * largeur  = 0.60 m
          */
 
         this.lengthM =
@@ -15,10 +21,20 @@ class BoardGeometry {
             config.widthM ?? 0.60;
 
 
+        this.validatePhysicalDimensions();
+
+
         /*
          * =====================================================
-         * DIMENSIONS DE L'IMAGE RECTIFIÉE
+         * ESPACE NORMALISÉ DE VISION
          * =====================================================
+         *
+         * IMPORTANT :
+         *
+         * Ces valeurs NE représentent PAS les dimensions
+         * physiques de la planche.
+         *
+         * Elles constituent notre espace de calcul OpenCV.
          */
 
         this.outputWidth =
@@ -28,14 +44,12 @@ class BoardGeometry {
             config.outputHeight ?? 600;
 
 
+        this.validateOutputDimensions();
+
+
         /*
          * =====================================================
          * LIGNE DE FAUTE
-         *
-         * Position exprimée en ratio de la longueur.
-         * Exemple :
-         *
-         * 0.20 = 20 % de la longueur
          * =====================================================
          */
 
@@ -46,12 +60,6 @@ class BoardGeometry {
         /*
          * =====================================================
          * ZONES
-         *
-         * Chaque valeur représente la position
-         * de la frontière sur l'axe X.
-         *
-         * IMPORTANT :
-         * Ces valeurs sont configurables.
          * =====================================================
          */
 
@@ -83,9 +91,7 @@ class BoardGeometry {
 
         /*
          * =====================================================
-         * COULEURS DE CALIBRATION
-         *
-         * Elles pourront être modifiées depuis Flutter.
+         * COULEURS
          * =====================================================
          */
 
@@ -107,17 +113,15 @@ class BoardGeometry {
 
         /*
          * =====================================================
-         * ÉPAISSEUR DES LIGNES
+         * ÉPAISSEURS
          * =====================================================
          */
 
         this.lineWidth =
             config.lineWidth ?? 3;
 
-
         this.faultLineWidth =
             config.faultLineWidth ?? 3;
-
 
         this.hangerLineWidth =
             config.hangerLineWidth ?? 5;
@@ -129,11 +133,118 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * DIMENSIONS
+     * VALIDATION DIMENSIONS PHYSIQUES
      * =========================================================
      */
 
-    getDimensions() {
+    validatePhysicalDimensions() {
+
+        if (
+            !Number.isFinite(this.lengthM) ||
+            this.lengthM <= 0
+        ) {
+
+            throw new Error(
+                "Longueur physique invalide."
+            );
+        }
+
+
+        if (
+            !Number.isFinite(this.widthM) ||
+            this.widthM <= 0
+        ) {
+
+            throw new Error(
+                "Largeur physique invalide."
+            );
+        }
+    }
+
+
+    /*
+     * =========================================================
+     * VALIDATION ESPACE DE CALCUL
+     * =========================================================
+     */
+
+    validateOutputDimensions() {
+
+        if (
+            !Number.isFinite(
+                this.outputWidth
+            ) ||
+            this.outputWidth <= 0
+        ) {
+
+            throw new Error(
+                "OutputWidth invalide."
+            );
+        }
+
+
+        if (
+            !Number.isFinite(
+                this.outputHeight
+            ) ||
+            this.outputHeight <= 0
+        ) {
+
+            throw new Error(
+                "OutputHeight invalide."
+            );
+        }
+    }
+
+
+    /*
+     * =========================================================
+     * MODIFICATION DIMENSIONS PHYSIQUES
+     * =========================================================
+     */
+
+    setPhysicalDimensions(
+        lengthM,
+        widthM
+    ) {
+
+        if (
+            !Number.isFinite(lengthM) ||
+            lengthM <= 0
+        ) {
+
+            throw new Error(
+                "Longueur physique invalide."
+            );
+        }
+
+
+        if (
+            !Number.isFinite(widthM) ||
+            widthM <= 0
+        ) {
+
+            throw new Error(
+                "Largeur physique invalide."
+            );
+        }
+
+
+        this.lengthM =
+            lengthM;
+
+        this.widthM =
+            widthM;
+    }
+
+
+    /*
+     * =========================================================
+     * DIMENSIONS PHYSIQUES
+     * =========================================================
+     */
+
+    getPhysicalDimensions() {
 
         return {
 
@@ -141,12 +252,25 @@ class BoardGeometry {
                 this.lengthM,
 
             widthM:
-                this.widthM,
+                this.widthM
+        };
+    }
 
-            outputWidth:
+
+    /*
+     * =========================================================
+     * DIMENSIONS NORMALISÉES
+     * =========================================================
+     */
+
+    getOutputDimensions() {
+
+        return {
+
+            width:
                 this.outputWidth,
 
-            outputHeight:
+            height:
                 this.outputHeight
         };
     }
@@ -154,7 +278,7 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * CONVERSION RATIO → PIXELS
+     * CONVERSION RATIO → PIXEL
      * =========================================================
      */
 
@@ -184,6 +308,69 @@ class BoardGeometry {
 
     /*
      * =========================================================
+     * PIXEL → MÈTRE
+     *
+     * Axe X = longueur
+     * Axe Y = largeur
+     * =========================================================
+     */
+
+    pixelToMeters(
+        x,
+        y
+    ) {
+
+        return {
+
+            x:
+                (
+                    x /
+                    this.outputWidth
+                ) *
+                this.lengthM,
+
+            y:
+                (
+                    y /
+                    this.outputHeight
+                ) *
+                this.widthM
+        };
+    }
+
+
+    /*
+     * =========================================================
+     * MÈTRE → PIXEL
+     * =========================================================
+     */
+
+    metersToPixel(
+        xM,
+        yM
+    ) {
+
+        return {
+
+            x:
+                (
+                    xM /
+                    this.lengthM
+                ) *
+                this.outputWidth,
+
+            y:
+                (
+                    yM /
+                    this.widthM
+                ) *
+                this.outputHeight
+        };
+    }
+
+
+    /*
+     * =========================================================
      * LIGNE DE FAUTE
      * =========================================================
      */
@@ -198,7 +385,7 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * LIMITES DES ZONES
+     * ZONES
      * =========================================================
      */
 
@@ -231,7 +418,7 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * LIMITE HANGER
+     * HANGER
      * =========================================================
      */
 
@@ -245,7 +432,51 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * RÉGLAGE DES ZONES
+     * ZONES EN MÈTRES
+     * =========================================================
+     */
+
+    getZoneBoundariesMeters() {
+
+        return {
+
+            zone1:
+                this.zoneRatios.zone1 *
+                this.lengthM,
+
+            zone2:
+                this.zoneRatios.zone2 *
+                this.lengthM,
+
+            zone3:
+                this.zoneRatios.zone3 *
+                this.lengthM,
+
+            zone4:
+                this.zoneRatios.zone4 *
+                this.lengthM
+        };
+    }
+
+
+    /*
+     * =========================================================
+     * HANGER EN MÈTRES
+     * =========================================================
+     */
+
+    getHangerBoundaryMeters() {
+
+        return (
+            this.hangerRatio *
+            this.lengthM
+        );
+    }
+
+
+    /*
+     * =========================================================
+     * ZONES
      * =========================================================
      */
 
@@ -294,11 +525,8 @@ class BoardGeometry {
         this.zoneRatios = {
 
             zone1,
-
             zone2,
-
             zone3,
-
             zone4
         };
     }
@@ -306,13 +534,11 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * RÉGLAGE HANGER
+     * HANGER
      * =========================================================
      */
 
-    setHangerRatio(
-        ratio
-    ) {
+    setHangerRatio(ratio) {
 
         if (
             !Number.isFinite(ratio) ||
@@ -333,13 +559,11 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * RÉGLAGE LIGNE DE FAUTE
+     * LIGNE DE FAUTE
      * =========================================================
      */
 
-    setFaultLineRatio(
-        ratio
-    ) {
+    setFaultLineRatio(ratio) {
 
         if (
             !Number.isFinite(ratio) ||
@@ -394,7 +618,7 @@ class BoardGeometry {
 
     /*
      * =========================================================
-     * DESSIN DEBUG
+     * DEBUG
      * =========================================================
      */
 
@@ -410,10 +634,8 @@ class BoardGeometry {
         const zones =
             this.getZoneBoundaries();
 
-
         const fault =
             this.getFaultLineX();
-
 
         const hanger =
             this.getHangerBoundary();
@@ -431,7 +653,6 @@ class BoardGeometry {
 
         ctx.strokeStyle =
             this.lineColors.fault;
-
 
         ctx.setLineDash([
             12,
@@ -458,7 +679,7 @@ class BoardGeometry {
 
 
         /*
-         * Lignes des zones
+         * Zones
          */
 
         ctx.lineWidth =
@@ -525,7 +746,7 @@ class BoardGeometry {
 
 
         /*
-         * Cadre extérieur
+         * Cadre
          */
 
         ctx.lineWidth = 4;
@@ -559,8 +780,11 @@ class BoardGeometry {
             initialized:
                 this.initialized,
 
-            dimensions:
-                this.getDimensions(),
+            physicalDimensions:
+                this.getPhysicalDimensions(),
+
+            outputDimensions:
+                this.getOutputDimensions(),
 
             faultLineRatio:
                 this.faultLineRatio,
@@ -576,11 +800,17 @@ class BoardGeometry {
             zoneBoundaries:
                 this.getZoneBoundaries(),
 
+            zoneBoundariesMeters:
+                this.getZoneBoundariesMeters(),
+
             hangerRatio:
                 this.hangerRatio,
 
             hangerBoundary:
                 this.getHangerBoundary(),
+
+            hangerBoundaryMeters:
+                this.getHangerBoundaryMeters(),
 
             lineColors:
                 {

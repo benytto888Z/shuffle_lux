@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "board": {
+    "lengthM": 1.2,
+    "widthM": 0.6
+  },
+  "vision": {
+    "outputWidth": 1200,
+    "outputHeight": 600
+  },
+  "geometry": {
+    "faultLineRatio": 0.2,
+    "zoneRatios": {
+      "zone1": 0.4,
+      "zone2": 0.6,
+      "zone3": 0.8,
+      "zone4": 0.9
+    },
+    "hangerRatio": 0.95
+  },
+  "lines": {
+    "zoneColor": "#ffffff",
+    "faultColor": "#000000",
+    "hangerColor": "#ffd700",
+    "zoneTolerance": 40,
+    "faultTolerance": 40,
+    "hangerTolerance": 40,
+    "zoneLineWidth": 3,
+    "faultLineWidth": 3,
+    "hangerLineWidth": 5
+  }
+}

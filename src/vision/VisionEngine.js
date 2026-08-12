@@ -127,7 +127,7 @@ class VisionEngine {
             "1vh";
 
         this.debugCanvas.style.width =
-            "40vw";
+            "60vw";
 
         this.debugCanvas.style.height =
             "auto";
