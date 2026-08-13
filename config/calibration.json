@@ -16,6 +16,13 @@
       "zone3": 0.8,
       "zone4": 0.9
     },
+    "zoneBoundariesMm": {
+      "foulLineX": 450,
+      "zone1EndX": 700,
+      "zone2EndX": 900,
+      "zone3EndX": 1050,
+      "zone4EndX": 1200
+    },
     "hangerRatio": 0.95
   },
   "lines": {

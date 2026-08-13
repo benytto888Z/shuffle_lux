@@ -28,6 +28,17 @@ class FinalBoardState {
 
         this.outOfBoardPucks = [];
 
+        /*
+         * Données dérivées après homographie :
+         *
+         * mappedPucks     = coordonnées physiques mm
+         * classifiedPucks = zone déterminée par le centre X
+         */
+
+        this.mappedPucks = [];
+
+        this.classifiedPucks = [];
+
         this.valid = false;
 
         this.validation = {
@@ -278,6 +289,100 @@ class FinalBoardState {
     }
 
 
+    setZoneAnalysis({
+        mappedPucks = [],
+        classifiedPucks = []
+    } = {}) {
+
+        if (!Array.isArray(mappedPucks)) {
+
+            throw new Error(
+                "FinalBoardState: mappedPucks doit être un tableau."
+            );
+        }
+
+
+        if (!Array.isArray(classifiedPucks)) {
+
+            throw new Error(
+                "FinalBoardState: classifiedPucks doit être un tableau."
+            );
+        }
+
+
+        if (
+            mappedPucks.length !==
+            classifiedPucks.length
+        ) {
+
+            throw new Error(
+                "FinalBoardState: tailles mapping/classification incompatibles."
+            );
+        }
+
+
+        this.mappedPucks =
+            mappedPucks.map(
+                puck => ({ ...puck })
+            );
+
+
+        this.classifiedPucks =
+            classifiedPucks.map(
+                puck => ({ ...puck })
+            );
+
+
+        return this.getZoneAnalysis();
+    }
+
+
+    getZoneAnalysis() {
+
+        const counts = {
+            beforeFoulLine: 0,
+            zone1: 0,
+            zone2: 0,
+            zone3: 0,
+            zone4: 0,
+            outsideBoard: 0
+        };
+
+
+        for (
+            const puck of
+            this.classifiedPucks
+        ) {
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    counts,
+                    puck.boardZone
+                )
+            ) {
+
+                counts[puck.boardZone] += 1;
+            }
+        }
+
+
+        return {
+            mappedCount:
+                this.mappedPucks.length,
+
+            classifiedCount:
+                this.classifiedPucks.length,
+
+            counts,
+
+            pucks:
+                this.classifiedPucks.map(
+                    puck => ({ ...puck })
+                )
+        };
+    }
+
+
     getPuckCount() {
 
         return this.pucks.length;
@@ -366,6 +471,12 @@ class FinalBoardState {
             outOfBoard:
                 this.outOfBoardPucks.length,
 
+            mapped:
+                this.mappedPucks.length,
+
+            zonesClassified:
+                this.classifiedPucks.length,
+
             boardWidth:
                 this.board.width,
 
@@ -429,6 +540,23 @@ class FinalBoardState {
                         ...puck
                     })
                 ),
+
+            mappedPucks:
+                this.mappedPucks.map(
+                    puck => ({
+                        ...puck
+                    })
+                ),
+
+            classifiedPucks:
+                this.classifiedPucks.map(
+                    puck => ({
+                        ...puck
+                    })
+                ),
+
+            zoneAnalysis:
+                this.getZoneAnalysis(),
 
             validation:
                 this.getValidation(),

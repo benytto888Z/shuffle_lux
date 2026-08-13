@@ -493,6 +493,32 @@ class BoardZones {
     }
 
 
+    getConfiguration() {
+
+        if (!this.configured) {
+            return null;
+        }
+
+
+        return {
+            foulLineX:
+                this.foulLineX,
+
+            zone1EndX:
+                this.zone1EndX,
+
+            zone2EndX:
+                this.zone2EndX,
+
+            zone3EndX:
+                this.zone3EndX,
+
+            zone4EndX:
+                this.zone4EndX
+        };
+    }
+
+
     getZone(number) {
 
         if (!this.configured) {

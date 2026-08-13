@@ -55,6 +55,24 @@ class CalibrationStorage {
                     zone4: 0.90
                 },
 
+                /*
+                 * Source de vérité métier pour BoardZones.
+                 * Toutes les valeurs sont mesurées sur l'axe X en mm.
+                 */
+
+                zoneBoundariesMm: {
+
+                    foulLineX: 450,
+
+                    zone1EndX: 700,
+
+                    zone2EndX: 900,
+
+                    zone3EndX: 1050,
+
+                    zone4EndX: 1200
+                },
+
                 hangerRatio: 0.95
             },
 

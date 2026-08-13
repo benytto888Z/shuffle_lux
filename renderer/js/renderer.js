@@ -136,12 +136,30 @@ const gameRoundManager =
         boardHeightMm: 600
     });
 
+const zoneBoundariesMm =
+    savedCalibration.geometry
+        ?.zoneBoundariesMm ?? {
+
+        foulLineX: 450,
+
+        zone1EndX: 700,
+
+        zone2EndX: 900,
+
+        zone3EndX: 1050,
+
+        zone4EndX: 1200
+    };
+
+
 const boardZones =
     new window.BoardZones({
 
         boardLength: 1200,
 
-        boardWidth: 600
+        boardWidth: 600,
+
+        ...zoneBoundariesMm
     });
 
 
@@ -346,7 +364,81 @@ function analyzeFinalBoard() {
 
 
         /*
-         * 7. Exposition globale
+         * 7. Mapping physique puis classification des zones.
+         *
+         * Le mapping conserve les données pixels et ajoute :
+         * mmX, mmY, radiusMm et diameterMm.
+         */
+
+        const mappedPucks =
+            boardCoordinateMapper.mapPucks(
+                finalBoardState.pucks
+            );
+
+
+        const classifiedPucks =
+            boardZones.classifyPucks(
+                mappedPucks
+            );
+
+
+        finalBoardState.setZoneAnalysis({
+            mappedPucks,
+            classifiedPucks
+        });
+
+
+        console.log(
+            "================================"
+        );
+
+        console.log(
+            "🎯 CLASSIFICATION DES ZONES"
+        );
+
+        console.log(
+            "================================"
+        );
+
+
+        console.table(
+            classifiedPucks.map(
+                (puck, index) => ({
+                    puck:
+                        index + 1,
+
+                    color:
+                        puck.color,
+
+                    mmX:
+                        Number(
+                            puck.mmX.toFixed(2)
+                        ),
+
+                    mmY:
+                        Number(
+                            puck.mmY.toFixed(2)
+                        ),
+
+                    zone:
+                        puck.boardZone,
+
+                    pointsZone:
+                        puck.zoneScore
+                })
+            )
+        );
+
+
+        window.mappedFinalPucks =
+            mappedPucks;
+
+        window.classifiedFinalPucks =
+            classifiedPucks;
+
+
+        /*
+         * 8. Exposition globale
          *
          * Permet de tester depuis
          * la console du navigateur.
@@ -392,57 +484,60 @@ function analyzeFinalBoard() {
          * 10. Validation
          */
 
-        if (
-            blueCount === 4 &&
-            greenCount === 3
-        ) {
+        const countValidation = {
+            blueValid:
+                blueCount >= 0 &&
+                blueCount <= 4,
 
-            console.log(
-                "================================"
-            );
+            greenValid:
+                greenCount >= 0 &&
+                greenCount <= 4,
 
-            console.log(
-                "✅ FINAL BOARD STATE : 7/7"
-            );
+            totalValid:
+                total >= 0 &&
+                total <= 8
+        };
 
-            console.log(
-                "🔵 4 BLEUS"
-            );
 
-            console.log(
-                "🟢 3 VERTS"
-            );
+        const variableCountValid =
+            countValidation.blueValid &&
+            countValidation.greenValid &&
+            countValidation.totalValid;
 
-            console.log(
-                "================================"
-            );
 
-        } else {
+        const validationLogger =
+            variableCountValid
+                ? (...args) =>
+                    console.log(...args)
+                : (...args) =>
+                    console.warn(...args);
 
-            console.warn(
-                "================================"
-            );
 
-            console.warn(
-                "⚠️ FINAL BOARD STATE INVALIDE"
-            );
+        validationLogger(
+            "================================"
+        );
 
-            console.warn(
-                `Bleus détectés : ${blueCount} / 4`
-            );
+        validationLogger(
+            variableCountValid
+                ? "✅ NOMBRE VARIABLE DE PALETS VALIDE"
+                : "⚠️ NOMBRE DE PALETS IMPOSSIBLE"
+        );
 
-            console.warn(
-                `Verts détectés : ${greenCount} / 3`
-            );
+        validationLogger(
+            `🔵 Bleus : ${blueCount} / maximum 4`
+        );
 
-            console.warn(
-                `Total détecté : ${total} / 7`
-            );
+        validationLogger(
+            `🟢 Verts : ${greenCount} / maximum 4`
+        );
 
-            console.warn(
-                "================================"
-            );
-        }
+        validationLogger(
+            `Total : ${total} / maximum 8`
+        );
+
+        validationLogger(
+            "================================"
+        );
 
 
         /*
@@ -1355,6 +1450,9 @@ function saveCalibration() {
                 .zoneRatios
             },
 
+            zoneBoundariesMm:
+                boardZones.getConfiguration(),
+
             hangerRatio: boardGeometry
                 .hangerRatio
         },
@@ -1429,6 +1527,16 @@ function loadCalibration() {
     boardGeometry.setHangerRatio(
         config.geometry.hangerRatio
     );
+
+
+    if (
+        config.geometry.zoneBoundariesMm
+    ) {
+
+        boardZones.configure(
+            config.geometry.zoneBoundariesMm
+        );
+    }
 
 
     lineCalibration.loadConfig(
