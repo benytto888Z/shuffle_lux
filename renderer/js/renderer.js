@@ -136,8 +136,28 @@ const gameRoundManager =
         boardHeightMm: 600
     });
 
-    const boardZones =
-    new window.BoardZones();
+const boardZones =
+    new window.BoardZones({
+
+        boardLength: 1200,
+
+        boardWidth: 600
+    });
+
+
+/*
+ * Exposition temporaire pour les tests de l'ÉTAPE 34.
+ * Aucune limite de zone n'est inventée ici.
+ */
+
+window.boardZones =
+    boardZones;
+
+
+console.log(
+    "BoardZones initialisé :",
+    boardZones.getStatus()
+);
 
 function analyzeFinalBoard() {
 
