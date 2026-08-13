@@ -136,6 +136,8 @@ const gameRoundManager =
         boardHeightMm: 600
     });
 
+    const boardZones =
+    new window.BoardZones();
 
 function analyzeFinalBoard() {
 

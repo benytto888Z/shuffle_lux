@@ -56,6 +56,50 @@ class BoardCoordinateMapper {
     }
 
 
+    pixelRadiusToMm(radius) {
+
+        if (
+            !Number.isFinite(radius)
+        ) {
+
+            return null;
+        }
+
+
+        const scaleX =
+            this.boardWidthMm /
+            this.pixelWidth;
+
+
+        const scaleY =
+            this.boardHeightMm /
+            this.pixelHeight;
+
+
+        const scale =
+            (scaleX + scaleY) / 2;
+
+
+        return radius * scale;
+    }
+
+
+    pixelDiameterToMm(diameter) {
+
+        if (
+            !Number.isFinite(diameter)
+        ) {
+
+            return null;
+        }
+
+
+        return this.pixelRadiusToMm(
+            diameter / 2
+        ) * 2;
+    }
+
+
     mapPuck(puck) {
 
         if (!puck) {
@@ -71,6 +115,18 @@ class BoardCoordinateMapper {
             );
 
 
+        const radiusMm =
+            this.pixelRadiusToMm(
+                puck.radius
+            );
+
+
+        const diameterMm =
+            radiusMm !== null
+                ? radiusMm * 2
+                : null;
+
+
         return {
 
             ...puck,
@@ -79,7 +135,11 @@ class BoardCoordinateMapper {
                 position.x,
 
             mmY:
-                position.y
+                position.y,
+
+            radiusMm,
+
+            diameterMm
         };
     }
 
@@ -145,7 +205,15 @@ class BoardCoordinateMapper {
                 this.boardWidthMm,
 
             boardHeightMm:
-                this.boardHeightMm
+                this.boardHeightMm,
+
+            scaleX:
+                this.boardWidthMm /
+                this.pixelWidth,
+
+            scaleY:
+                this.boardHeightMm /
+                this.pixelHeight
         };
     }
 }
