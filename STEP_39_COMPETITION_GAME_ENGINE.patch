@@ -1,0 +1,721 @@
+diff --git a/renderer/index.html b/renderer/index.html
+index e388847..ab9cae1 100644
+--- a/renderer/index.html
++++ b/renderer/index.html
+@@ -87,6 +87,7 @@
+     <script src="../src/vision/calibration/LineCalibration.js"></script>
+     <script src="../src/vision/calibration/CalibrationStorage.js"></script>
+     <script src="../src/vision/detectors/PuckDetector.js"></script>
++    <script src="../src/game/GameEngine.js"></script>
+     <script src="../src/game/GameRoundManager.js"></script>
+     <script src="../src/vision/FinalBoardState.js"></script>
+     <script src="../src/vision/BoardCoordinateMapper.js"></script>
+diff --git a/renderer/js/renderer.js b/renderer/js/renderer.js
+index e655014..a901361 100644
+--- a/renderer/js/renderer.js
++++ b/renderer/js/renderer.js
+@@ -112,6 +112,41 @@ const boardGeometry =
+ const puckDetector =
+     new window.PuckDetector();
+ 
++
++const gameEngine =
++    new window.GameEngine({
++        defaultWinningScore: 15,
++
++        onMatchUpdated: (
++            matchState,
++            event
++        ) => {
++
++            window.currentMatchState =
++                matchState;
++
++            console.log(
++                `🎮 GAME ENGINE · ${event}`,
++                matchState
++            );
++        },
++
++        onMatchCompleted: (
++            matchState
++        ) => {
++
++            console.log(
++                "🏆 PARTIE TERMINÉE :",
++                matchState
++            );
++        }
++    });
++
++
++window.gameEngine =
++    gameEngine;
++
++
+ const gameRoundManager =
+     new window.GameRoundManager({
+ 
+@@ -155,6 +190,22 @@ const gameRoundManager =
+                 "🏁 RÉSULTAT DE MANCHE DISPONIBLE :",
+                 roundResult.summary
+             );
++
++
++            if (
++                gameEngine.isMatchActive()
++            ) {
++
++                gameEngine.applyRoundResult(
++                    roundResult
++                );
++
++            } else {
++
++                console.log(
++                    "ℹ️ Aucune partie active : résultat conservé sans cumul."
++                );
++            }
+         },
+ 
+ 
+@@ -182,6 +233,55 @@ window.gameRoundManager =
+     gameRoundManager;
+ 
+ 
++window.startCompetitionMatch =
++    (config = {}) => {
++
++        if (
++            gameRoundManager.isBusy()
++        ) {
++
++            console.warn(
++                "Impossible de démarrer une partie pendant une manche active."
++            );
++
++            return false;
++        }
++
++
++        gameRoundManager.reset();
++
++        gameEngine.reset();
++
++
++        return gameEngine.startMatch({
++            matchType: "competition",
++            gameMode:
++                config.gameMode ??
++                "classic",
++            winningScore:
++                config.winningScore ??
++                15
++        });
++    };
++
++
++window.startNextRound =
++    () => {
++
++        if (!gameEngine.isMatchActive()) {
++
++            console.warn(
++                "Aucune partie active."
++            );
++
++            return false;
++        }
++
++
++        return gameRoundManager.start();
++    };
++
++
+     const boardCoordinateMapper =
+     new window.BoardCoordinateMapper({
+ 
+diff --git a/src/game/GameEngine.js b/src/game/GameEngine.js
+index e69de29..dd8f933 100644
+--- a/src/game/GameEngine.js
++++ b/src/game/GameEngine.js
+@@ -0,0 +1,579 @@
++class GameEngine {
++
++    constructor(config = {}) {
++
++        this.defaultWinningScore =
++            config.defaultWinningScore ?? 15;
++
++        this.onMatchUpdated =
++            config.onMatchUpdated ?? null;
++
++        this.onMatchCompleted =
++            config.onMatchCompleted ?? null;
++
++        this.onMatchCancelled =
++            config.onMatchCancelled ?? null;
++
++
++        this.validateWinningScore(
++            this.defaultWinningScore
++        );
++
++
++        this.initialized = true;
++
++        this.reset();
++    }
++
++
++    validateWinningScore(value) {
++
++        if (
++            !Number.isInteger(value) ||
++            value <= 0
++        ) {
++
++            throw new Error(
++                "GameEngine: winningScore doit être un entier positif."
++            );
++        }
++    }
++
++
++    createMatchId() {
++
++        if (
++            typeof crypto !== "undefined" &&
++            typeof crypto.randomUUID ===
++                "function"
++        ) {
++
++            return crypto.randomUUID();
++        }
++
++
++        return (
++            "MATCH-" +
++            Date.now() +
++            "-" +
++            Math.random()
++                .toString(16)
++                .slice(2)
++        );
++    }
++
++
++    startMatch(config = {}) {
++
++        if (this.phase === "active") {
++
++            console.warn(
++                "GameEngine : une partie est déjà active."
++            );
++
++            return false;
++        }
++
++
++        const winningScore =
++            config.winningScore ??
++            this.defaultWinningScore;
++
++
++        this.validateWinningScore(
++            winningScore
++        );
++
++
++        this.matchId =
++            config.matchId ??
++            this.createMatchId();
++
++        this.matchType =
++            config.matchType ??
++            "competition";
++
++        this.gameMode =
++            config.gameMode ??
++            "classic";
++
++        this.winningScore =
++            winningScore;
++
++        this.phase = "active";
++
++        this.startedAt =
++            Date.now();
++
++        this.completedAt = null;
++
++        this.cancelledAt = null;
++
++        this.winner = null;
++
++        this.tieBreakActive = false;
++
++        this.scores = {
++            blue: 0,
++            green: 0
++        };
++
++        this.rounds = [];
++
++        this.appliedRoundNumbers =
++            new Set();
++
++        this.lastRound = null;
++
++
++        console.log(
++            "🎮 PARTIE DÉMARRÉE",
++            this.getState()
++        );
++
++
++        this.emitUpdate(
++            "matchStarted"
++        );
++
++
++        return true;
++    }
++
++
++    isMatchActive() {
++
++        return this.phase === "active";
++    }
++
++
++    validateRoundResult(roundResult) {
++
++        if (
++            !roundResult ||
++            typeof roundResult !== "object"
++        ) {
++
++            throw new Error(
++                "GameEngine: roundResult invalide."
++            );
++        }
++
++
++        if (
++            !Number.isInteger(
++                roundResult.roundNumber
++            ) ||
++            roundResult.roundNumber <= 0
++        ) {
++
++            throw new Error(
++                "GameEngine: roundNumber invalide."
++            );
++        }
++
++
++        const summary =
++            roundResult.summary;
++
++
++        if (
++            !summary ||
++            !Number.isFinite(
++                summary.blueScore
++            ) ||
++            !Number.isFinite(
++                summary.greenScore
++            ) ||
++            summary.blueScore < 0 ||
++            summary.greenScore < 0
++        ) {
++
++            throw new Error(
++                "GameEngine: scores de manche invalides."
++            );
++        }
++
++
++        return true;
++    }
++
++
++    applyRoundResult(roundResult) {
++
++        if (!this.isMatchActive()) {
++
++            console.warn(
++                "GameEngine : aucune partie active."
++            );
++
++            return false;
++        }
++
++
++        this.validateRoundResult(
++            roundResult
++        );
++
++
++        if (
++            this.appliedRoundNumbers.has(
++                roundResult.roundNumber
++            )
++        ) {
++
++            console.warn(
++                `GameEngine : manche #${roundResult.roundNumber} déjà appliquée.`
++            );
++
++            return false;
++        }
++
++
++        const roundEntry = {
++            roundNumber:
++                roundResult.roundNumber,
++
++            completedAt:
++                roundResult.completedAt ??
++                Date.now(),
++
++            blueScore:
++                roundResult.summary
++                    .blueScore,
++
++            greenScore:
++                roundResult.summary
++                    .greenScore,
++
++            totalPucks:
++                roundResult.summary
++                    .totalPucks,
++
++            totalHangers:
++                roundResult.summary
++                    .totalHangers,
++
++            provisionalLeader:
++                roundResult.summary
++                    .provisionalLeader
++        };
++
++
++        this.scores.blue +=
++            roundEntry.blueScore;
++
++        this.scores.green +=
++            roundEntry.greenScore;
++
++
++        roundEntry.cumulativeBlue =
++            this.scores.blue;
++
++        roundEntry.cumulativeGreen =
++            this.scores.green;
++
++
++        this.rounds.push(
++            roundEntry
++        );
++
++        this.appliedRoundNumbers.add(
++            roundEntry.roundNumber
++        );
++
++        this.lastRound =
++            { ...roundEntry };
++
++
++        this.evaluateMatchEnd();
++
++
++        console.log(
++            `📊 MANCHE #${roundEntry.roundNumber} AJOUTÉE`,
++            {
++                round:
++                    {
++                        blue:
++                            roundEntry.blueScore,
++
++                        green:
++                            roundEntry.greenScore
++                    },
++
++                cumulative:
++                    { ...this.scores },
++
++                winningScore:
++                    this.winningScore,
++
++                phase:
++                    this.phase,
++
++                winner:
++                    this.winner,
++
++                tieBreakActive:
++                    this.tieBreakActive
++            }
++        );
++
++
++        this.emitUpdate(
++            "roundApplied"
++        );
++
++
++        return true;
++    }
++
++
++    evaluateMatchEnd() {
++
++        const blueReached =
++            this.scores.blue >=
++            this.winningScore;
++
++        const greenReached =
++            this.scores.green >=
++            this.winningScore;
++
++
++        if (
++            !blueReached &&
++            !greenReached
++        ) {
++
++            this.tieBreakActive = false;
++
++            return false;
++        }
++
++
++        if (
++            this.scores.blue ===
++            this.scores.green
++        ) {
++
++            /*
++             * Les deux côtés ont joué la même manche : l'équité est respectée.
++             * Une égalité à l'objectif prolonge la partie d'une manche.
++             */
++
++            this.tieBreakActive = true;
++
++            console.log(
++                "⚖️ ÉGALITÉ — MANCHE DE DÉPARTAGE NÉCESSAIRE"
++            );
++
++            return false;
++        }
++
++
++        this.tieBreakActive = false;
++
++        this.winner =
++            this.scores.blue >
++            this.scores.green
++                ? "blue"
++                : "green";
++
++        this.phase = "completed";
++
++        this.completedAt =
++            Date.now();
++
++
++        console.log(
++            `🏆 VICTOIRE ${this.winner.toUpperCase()}`,
++            { ...this.scores }
++        );
++
++
++        if (
++            typeof this.onMatchCompleted ===
++            "function"
++        ) {
++
++            this.onMatchCompleted(
++                this.getState()
++            );
++        }
++
++
++        return true;
++    }
++
++
++    cancelMatch(reason = "cancelled") {
++
++        if (this.phase !== "active") {
++            return false;
++        }
++
++
++        this.phase = "cancelled";
++
++        this.cancelledAt =
++            Date.now();
++
++        this.cancelReason =
++            reason;
++
++
++        if (
++            typeof this.onMatchCancelled ===
++            "function"
++        ) {
++
++            this.onMatchCancelled(
++                this.getState()
++            );
++        }
++
++
++        this.emitUpdate(
++            "matchCancelled"
++        );
++
++
++        return true;
++    }
++
++
++    reset() {
++
++        this.matchId = null;
++
++        this.matchType = null;
++
++        this.gameMode = null;
++
++        this.winningScore =
++            this.defaultWinningScore;
++
++        this.phase = "idle";
++
++        this.startedAt = null;
++
++        this.completedAt = null;
++
++        this.cancelledAt = null;
++
++        this.cancelReason = null;
++
++        this.winner = null;
++
++        this.tieBreakActive = false;
++
++        this.scores = {
++            blue: 0,
++            green: 0
++        };
++
++        this.rounds = [];
++
++        this.appliedRoundNumbers =
++            new Set();
++
++        this.lastRound = null;
++
++
++        return this.getState();
++    }
++
++
++    emitUpdate(event) {
++
++        if (
++            typeof this.onMatchUpdated ===
++            "function"
++        ) {
++
++            this.onMatchUpdated(
++                this.getState(),
++                event
++            );
++        }
++    }
++
++
++    getState() {
++
++        return {
++            initialized:
++                this.initialized,
++
++            matchId:
++                this.matchId,
++
++            matchType:
++                this.matchType,
++
++            gameMode:
++                this.gameMode,
++
++            phase:
++                this.phase,
++
++            active:
++                this.isMatchActive(),
++
++            winningScore:
++                this.winningScore,
++
++            scores:
++                { ...this.scores },
++
++            roundCount:
++                this.rounds.length,
++
++            rounds:
++                this.rounds.map(
++                    round => ({ ...round })
++                ),
++
++            lastRound:
++                this.lastRound
++                    ? { ...this.lastRound }
++                    : null,
++
++            winner:
++                this.winner,
++
++            tieBreakActive:
++                this.tieBreakActive,
++
++            startedAt:
++                this.startedAt,
++
++            completedAt:
++                this.completedAt,
++
++            cancelledAt:
++                this.cancelledAt,
++
++            cancelReason:
++                this.cancelReason
++        };
++    }
++}
++
++
++if (
++    typeof window !== "undefined"
++) {
++
++    window.GameEngine =
++        GameEngine;
++}
++
++
++if (
++    typeof module !== "undefined" &&
++    module.exports
++) {
++
++    module.exports =
++        GameEngine;
++}

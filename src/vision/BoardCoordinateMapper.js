@@ -13,17 +13,30 @@ class BoardCoordinateMapper {
 
         this.boardHeightMm =
             config.boardHeightMm ?? 600;
+
+        // Origine de la vraie planche dans le canvas rectifié étendu.
+        this.marginX =
+            config.marginX ?? 0;
+
+        this.marginY =
+            config.marginY ?? 0;
     }
 
 
     pixelToMm(x, y) {
 
         const mmX =
-            (x / this.pixelWidth) *
+            (
+                (x - this.marginX) /
+                this.pixelWidth
+            ) *
             this.boardWidthMm;
 
         const mmY =
-            (y / this.pixelHeight) *
+            (
+                (y - this.marginY) /
+                this.pixelHeight
+            ) *
             this.boardHeightMm;
 
 
@@ -39,12 +52,18 @@ class BoardCoordinateMapper {
     mmToPixel(x, y) {
 
         const pixelX =
-            (x / this.boardWidthMm) *
-            this.pixelWidth;
+            this.marginX +
+            (
+                (x / this.boardWidthMm) *
+                this.pixelWidth
+            );
 
         const pixelY =
-            (y / this.boardHeightMm) *
-            this.pixelHeight;
+            this.marginY +
+            (
+                (y / this.boardHeightMm) *
+                this.pixelHeight
+            );
 
 
         return {
@@ -206,6 +225,20 @@ class BoardCoordinateMapper {
 
             boardHeightMm:
                 this.boardHeightMm,
+
+            marginX:
+                this.marginX,
+
+            marginY:
+                this.marginY,
+
+            canvasWidth:
+                this.pixelWidth +
+                (this.marginX * 2),
+
+            canvasHeight:
+                this.pixelHeight +
+                (this.marginY * 2),
 
             scaleX:
                 this.boardWidthMm /

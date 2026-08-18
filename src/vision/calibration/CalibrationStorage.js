@@ -37,7 +37,11 @@ class CalibrationStorage {
 
                 outputWidth: 1200,
 
-                outputHeight: 600
+                outputHeight: 600,
+
+                marginX: 60,
+
+                marginY: 60
             },
 
             geometry: {

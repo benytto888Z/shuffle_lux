@@ -11,9 +11,17 @@ class HomographyManager {
 
         this.sourcePoints = null;
 
-        this.outputWidth = 1200;
+        // Dimensions de la vraie planche dans l'espace rectifié.
+        this.boardOutputWidth = 1200;
 
-        this.outputHeight = 600;
+        this.boardOutputHeight = 600;
+
+        // Marges de vision permettant de conserver les contours qui dépassent.
+        this.marginX = 0;
+
+        this.marginY = 0;
+
+        this.updateCanvasSize();
     }
 
 
@@ -53,14 +61,56 @@ class HomographyManager {
         }
 
 
-        this.outputWidth =
+        this.boardOutputWidth =
             Math.round(width);
 
-        this.outputHeight =
+        this.boardOutputHeight =
             Math.round(height);
 
 
+        this.updateCanvasSize();
+
         this.invalidate();
+    }
+
+
+    setMargins(marginX, marginY = marginX) {
+
+        if (
+            !Number.isFinite(marginX) ||
+            !Number.isFinite(marginY) ||
+            marginX < 0 ||
+            marginY < 0
+        ) {
+
+            throw new Error(
+                "Marges d'homographie invalides."
+            );
+        }
+
+
+        this.marginX =
+            Math.round(marginX);
+
+        this.marginY =
+            Math.round(marginY);
+
+
+        this.updateCanvasSize();
+
+        this.invalidate();
+    }
+
+
+    updateCanvasSize() {
+
+        this.outputWidth =
+            this.boardOutputWidth +
+            (this.marginX * 2);
+
+        this.outputHeight =
+            this.boardOutputHeight +
+            (this.marginY * 2);
     }
 
 
@@ -158,17 +208,21 @@ class HomographyManager {
 
                 [
 
-                    0,
-                    0,
+                    this.marginX,
+                    this.marginY,
 
-                    this.outputWidth,
-                    0,
+                    this.marginX +
+                    this.boardOutputWidth,
+                    this.marginY,
 
-                    this.outputWidth,
-                    this.outputHeight,
+                    this.marginX +
+                    this.boardOutputWidth,
+                    this.marginY +
+                    this.boardOutputHeight,
 
-                    0,
-                    this.outputHeight
+                    this.marginX,
+                    this.marginY +
+                    this.boardOutputHeight
                 ]
             );
 
@@ -273,11 +327,30 @@ class HomographyManager {
             sourcePoints:
                 this.getSourcePoints(),
 
+            boardOutputWidth:
+                this.boardOutputWidth,
+
+            boardOutputHeight:
+                this.boardOutputHeight,
+
+            marginX:
+                this.marginX,
+
+            marginY:
+                this.marginY,
+
             outputWidth:
                 this.outputWidth,
 
             outputHeight:
-                this.outputHeight
+                this.outputHeight,
+
+            boardRect: {
+                x: this.marginX,
+                y: this.marginY,
+                width: this.boardOutputWidth,
+                height: this.boardOutputHeight
+            }
         };
     }
 

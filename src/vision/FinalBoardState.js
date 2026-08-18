@@ -1,12 +1,23 @@
 class FinalBoardState {
 
-    constructor(detections = []) {
+    constructor(detections = [], config = {}) {
 
         this.timestamp = Date.now();
 
         this.board = {
-            width: 1200,
-            height: 600
+            width:
+                config.boardWidth ?? 1200,
+
+            height:
+                config.boardHeight ?? 600
+        };
+
+        this.vision = {
+            marginX:
+                config.marginX ?? 0,
+
+            marginY:
+                config.marginY ?? 0
         };
 
         // Règle officielle :
@@ -38,6 +49,12 @@ class FinalBoardState {
         this.mappedPucks = [];
 
         this.classifiedPucks = [];
+
+        this.scoredPucks = [];
+
+        this.hangerPucks = [];
+
+        this.scoreResult = null;
 
         this.valid = false;
 
@@ -195,10 +212,16 @@ class FinalBoardState {
                  */
 
                 const inside =
-                    x >= 0 &&
-                    x <= this.board.width &&
-                    y >= 0 &&
-                    y <= this.board.height;
+                    x >= this.vision.marginX &&
+                    x <= (
+                        this.vision.marginX +
+                        this.board.width
+                    ) &&
+                    y >= this.vision.marginY &&
+                    y <= (
+                        this.vision.marginY +
+                        this.board.height
+                    );
 
 
                 puckData.insideBoard =
@@ -334,6 +357,110 @@ class FinalBoardState {
 
 
         return this.getZoneAnalysis();
+    }
+
+
+    setHangerAnalysis(scoredPucks = []) {
+
+        if (!Array.isArray(scoredPucks)) {
+
+            throw new Error(
+                "FinalBoardState: scoredPucks doit être un tableau."
+            );
+        }
+
+
+        if (
+            scoredPucks.length !==
+            this.classifiedPucks.length
+        ) {
+
+            throw new Error(
+                "FinalBoardState: tailles classification/Hanger incompatibles."
+            );
+        }
+
+
+        this.scoredPucks =
+            scoredPucks.map(
+                puck => ({ ...puck })
+            );
+
+
+        this.hangerPucks =
+            this.scoredPucks
+                .filter(
+                    puck =>
+                        puck.isHanger
+                )
+                .map(
+                    puck => ({ ...puck })
+                );
+
+
+        return this.getHangerAnalysis();
+    }
+
+
+    getHangerAnalysis() {
+
+        return {
+            analyzedCount:
+                this.scoredPucks.length,
+
+            hangerCount:
+                this.hangerPucks.length,
+
+            hangers:
+                this.hangerPucks.map(
+                    puck => ({ ...puck })
+                ),
+
+            pucks:
+                this.scoredPucks.map(
+                    puck => ({ ...puck })
+                )
+        };
+    }
+
+
+    setScoreResult(scoreResult) {
+
+        if (
+            !scoreResult ||
+            typeof scoreResult !== "object"
+        ) {
+
+            throw new Error(
+                "FinalBoardState: scoreResult invalide."
+            );
+        }
+
+
+        this.scoreResult =
+            JSON.parse(
+                JSON.stringify(
+                    scoreResult
+                )
+            );
+
+
+        return this.getScoreResult();
+    }
+
+
+    getScoreResult() {
+
+        if (!this.scoreResult) {
+            return null;
+        }
+
+
+        return JSON.parse(
+            JSON.stringify(
+                this.scoreResult
+            )
+        );
     }
 
 
@@ -477,11 +604,38 @@ class FinalBoardState {
             zonesClassified:
                 this.classifiedPucks.length,
 
+            hangerAnalyzed:
+                this.scoredPucks.length,
+
+            hangers:
+                this.hangerPucks.length,
+
+            scoreCalculated:
+                !!this.scoreResult,
+
+            blueScore:
+                this.scoreResult
+                    ?.byColor
+                    ?.blue
+                    ?.totalScore ?? null,
+
+            greenScore:
+                this.scoreResult
+                    ?.byColor
+                    ?.green
+                    ?.totalScore ?? null,
+
             boardWidth:
                 this.board.width,
 
             boardHeight:
                 this.board.height,
+
+            visionMarginX:
+                this.vision.marginX,
+
+            visionMarginY:
+                this.vision.marginY,
 
             timestamp:
                 this.timestamp
@@ -499,6 +653,11 @@ class FinalBoardState {
             board:
                 {
                     ...this.board
+                },
+
+            vision:
+                {
+                    ...this.vision
                 },
 
             expected:
@@ -557,6 +716,26 @@ class FinalBoardState {
 
             zoneAnalysis:
                 this.getZoneAnalysis(),
+
+            scoredPucks:
+                this.scoredPucks.map(
+                    puck => ({
+                        ...puck
+                    })
+                ),
+
+            hangerPucks:
+                this.hangerPucks.map(
+                    puck => ({
+                        ...puck
+                    })
+                ),
+
+            hangerAnalysis:
+                this.getHangerAnalysis(),
+
+            scoreResult:
+                this.getScoreResult(),
 
             validation:
                 this.getValidation(),

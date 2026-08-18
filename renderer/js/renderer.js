@@ -37,6 +37,37 @@ const homographyManager =
 const savedCalibration =
     calibrationStorage.loadOrDefault();
 
+
+const boardOutputWidth =
+    savedCalibration.vision.outputWidth ??
+    savedCalibration.vision.width ??
+    1200;
+
+const boardOutputHeight =
+    savedCalibration.vision.outputHeight ??
+    savedCalibration.vision.height ??
+    600;
+
+const visionMarginX =
+    savedCalibration.vision.marginX ??
+    60;
+
+const visionMarginY =
+    savedCalibration.vision.marginY ??
+    60;
+
+
+homographyManager.setOutputSize(
+    boardOutputWidth,
+    boardOutputHeight
+);
+
+homographyManager.setMargins(
+    visionMarginX,
+    visionMarginY
+);
+
+
 const lineCalibration =
     new window.LineCalibration(
         savedCalibration.lines
@@ -52,9 +83,9 @@ const boardGeometry =
 
         widthM: savedCalibration.board.widthM,
 
-        outputWidth: savedCalibration.vision.outputWidth,
+        outputWidth: boardOutputWidth,
 
-        outputHeight: savedCalibration.vision.outputHeight,
+        outputHeight: boardOutputHeight,
 
         faultLineRatio: savedCalibration.geometry.faultLineRatio,
 
@@ -110,7 +141,29 @@ const gameRoundManager =
                 "📸 ANALYSE DE LA POSITION FINALE"
             );
 
-            analyzeFinalBoard();
+            return analyzeFinalBoard();
+        },
+
+
+        onRoundComplete: (roundResult) => {
+
+            window.lastRoundResult =
+                roundResult;
+
+
+            console.log(
+                "🏁 RÉSULTAT DE MANCHE DISPONIBLE :",
+                roundResult.summary
+            );
+        },
+
+
+        onAnalysisError: (error) => {
+
+            console.error(
+                "GameRoundManager — analyse échouée :",
+                error
+            );
         },
 
 
@@ -124,6 +177,11 @@ const gameRoundManager =
         }
     });
 
+
+window.gameRoundManager =
+    gameRoundManager;
+
+
     const boardCoordinateMapper =
     new window.BoardCoordinateMapper({
 
@@ -133,7 +191,11 @@ const gameRoundManager =
 
         boardWidthMm: 1200,
 
-        boardHeightMm: 600
+        boardHeightMm: 600,
+
+        marginX: visionMarginX,
+
+        marginY: visionMarginY
     });
 
 const zoneBoundariesMm =
@@ -176,6 +238,47 @@ console.log(
     "BoardZones initialisé :",
     boardZones.getStatus()
 );
+
+
+const hangerDetector =
+    new window.HangerDetector({
+        boardLength: 1200,
+        boardWidth: 600,
+        contactToleranceMm: 0
+    });
+
+
+window.hangerDetector =
+    hangerDetector;
+
+
+console.log(
+    "HangerDetector initialisé :",
+    hangerDetector.getStatus()
+);
+
+
+const scoreEngine =
+    new window.ScoreEngine({
+        allowedColors: [
+            "blue",
+            "green"
+        ],
+        maximumPucksPerColor: 4,
+        minimumScore: 0,
+        maximumScore: 5
+    });
+
+
+window.scoreEngine =
+    scoreEngine;
+
+
+console.log(
+    "ScoreEngine initialisé :",
+    scoreEngine.getStatus()
+);
+
 
 function analyzeFinalBoard() {
 
@@ -223,9 +326,20 @@ function analyzeFinalBoard() {
          * 2. Vérification des dimensions
          */
 
+        const expectedRectifiedWidth =
+            boardOutputWidth +
+            (visionMarginX * 2);
+
+        const expectedRectifiedHeight =
+            boardOutputHeight +
+            (visionMarginY * 2);
+
+
         if (
-            rectified.cols !== 1200 ||
-            rectified.rows !== 600
+            rectified.cols !==
+            expectedRectifiedWidth ||
+            rectified.rows !==
+            expectedRectifiedHeight
         ) {
 
             throw new Error(
@@ -359,7 +473,13 @@ function analyzeFinalBoard() {
 
         finalBoardState =
             new window.FinalBoardState(
-                detections
+                detections,
+                {
+                    boardWidth: 1200,
+                    boardHeight: 600,
+                    marginX: visionMarginX,
+                    marginY: visionMarginY
+                }
             );
 
 
@@ -388,6 +508,28 @@ function analyzeFinalBoard() {
         });
 
 
+        const scoredPucks =
+            hangerDetector.evaluatePucks(
+                classifiedPucks
+            );
+
+
+        finalBoardState.setHangerAnalysis(
+            scoredPucks
+        );
+
+
+        const scoreResult =
+            scoreEngine.calculate(
+                scoredPucks
+            );
+
+
+        finalBoardState.setScoreResult(
+            scoreResult
+        );
+
+
         console.log(
             "================================"
         );
@@ -402,7 +544,7 @@ function analyzeFinalBoard() {
 
 
         console.table(
-            classifiedPucks.map(
+            scoredPucks.map(
                 (puck, index) => ({
                     puck:
                         index + 1,
@@ -420,13 +562,77 @@ function analyzeFinalBoard() {
                             puck.mmY.toFixed(2)
                         ),
 
+                    radiusMm:
+                        Number.isFinite(
+                            puck.radiusMm
+                        )
+                            ? Number(
+                                puck.radiusMm
+                                    .toFixed(2)
+                            )
+                            : null,
+
+                    frontEdgeX:
+                        Number.isFinite(
+                            puck.frontEdgeX
+                        )
+                            ? Number(
+                                puck.frontEdgeX
+                                    .toFixed(2)
+                            )
+                            : null,
+
                     zone:
                         puck.boardZone,
 
-                    pointsZone:
-                        puck.zoneScore
+                    hanger:
+                        puck.isHanger,
+
+                    result:
+                        puck.scoreType,
+
+                    points:
+                        puck.finalScore
                 })
             )
+        );
+
+
+        console.log(
+            "================================"
+        );
+
+        console.log(
+            "🏆 SCORE DE L'ÉTAT FINAL"
+        );
+
+        console.log(
+            "🔵 BLEU :",
+            scoreResult.byColor.blue.totalScore,
+            "points ·",
+            scoreResult.byColor.blue.puckCount,
+            "palet(s) ·",
+            scoreResult.byColor.blue.hangerCount,
+            "Hanger(s)"
+        );
+
+        console.log(
+            "🟢 VERT :",
+            scoreResult.byColor.green.totalScore,
+            "points ·",
+            scoreResult.byColor.green.puckCount,
+            "palet(s) ·",
+            scoreResult.byColor.green.hangerCount,
+            "Hanger(s)"
+        );
+
+        console.log(
+            "Leader provisoire :",
+            scoreResult.provisionalLeader
+        );
+
+        console.log(
+            "================================"
         );
 
 
@@ -435,6 +641,12 @@ function analyzeFinalBoard() {
 
         window.classifiedFinalPucks =
             classifiedPucks;
+
+        window.scoredFinalPucks =
+            scoredPucks;
+
+        window.finalScoreResult =
+            scoreResult;
 
 
         /*
@@ -706,9 +918,18 @@ function showBoardGeometry() {
         );
 
 
+        context.save();
+
+        context.translate(
+            visionMarginX,
+            visionMarginY
+        );
+
         boardGeometry.drawDebug(
             context
         );
+
+        context.restore();
 
 
         const debugCanvas =
@@ -1057,16 +1278,23 @@ const canvas =
 
 
     const pucks =
-        window.finalBoardState.pucks;
+        Array.isArray(
+            window.scoredFinalPucks
+        )
+            ? window.scoredFinalPucks
+            : window.finalBoardState.pucks;
 
 
     pucks.forEach(
         (puck, index) => {
 
             const mapped =
-                mapper.mapPuck(
-                    puck
-                );
+                Number.isFinite(puck.mmX) &&
+                Number.isFinite(puck.mmY)
+                    ? puck
+                    : mapper.mapPuck(
+                        puck
+                    );
 
 
             if (!mapped) {
@@ -1093,7 +1321,9 @@ const canvas =
                 x,
                 y,
                 Math.max(
-                    puck.radius || 20,
+                    mapped.radiusMm ||
+                    puck.radius ||
+                    20,
                     10
                 ),
                 0,
@@ -1102,12 +1332,19 @@ const canvas =
 
 
             ctx.strokeStyle =
-                puck.color === "blue"
-                    ? "#00aaff"
-                    : "#00ff66";
+                mapped.isHanger
+                    ? "#ffd700"
+                    : (
+                        puck.color === "blue"
+                            ? "#00aaff"
+                            : "#00ff66"
+                    );
 
 
-            ctx.lineWidth = 3;
+            ctx.lineWidth =
+                mapped.isHanger
+                    ? 7
+                    : 3;
 
             ctx.stroke();
 
@@ -1143,8 +1380,14 @@ const canvas =
                 "#ffffff";
 
 
+            const resultLabel =
+                mapped.isHanger
+                    ? "HANGER · 5 PTS"
+                    : `${mapped.boardZone ?? "?"} · ${mapped.finalScore ?? mapped.zoneScore ?? 0} PTS`;
+
+
             ctx.fillText(
-                `#${index + 1} ${Math.round(x)} × ${Math.round(y)} mm`,
+                `#${index + 1} ${Math.round(x)} × ${Math.round(y)} mm · ${resultLabel}`,
                 x + 12,
                 y - 10
             );
@@ -1437,8 +1680,19 @@ function saveCalibration() {
         board: boardGeometry
             .getPhysicalDimensions(),
 
-        vision: boardGeometry
-            .getOutputDimensions(),
+        vision: {
+            outputWidth:
+                boardOutputWidth,
+
+            outputHeight:
+                boardOutputHeight,
+
+            marginX:
+                visionMarginX,
+
+            marginY:
+                visionMarginY
+        },
 
         geometry: {
 
